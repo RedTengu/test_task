@@ -1,0 +1,1 @@
+export const SECRET_KEY = "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";

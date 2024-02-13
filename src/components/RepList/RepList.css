@@ -1,0 +1,14 @@
+.rep-list {
+  margin: 50px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.rep-list__item {
+  padding: 15px 10px;
+  border: 1px solid #999;
+  text-align: left;
+}
