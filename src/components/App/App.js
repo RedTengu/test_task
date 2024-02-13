@@ -17,67 +17,70 @@ function App() {
   const [repData, setRepData] = useState([]);
   const [searchInput, setSearchInput] = useState('');
   const [cursor, setCursor] = useState(null);
-  const [fetching, setFetching] = useState(false); 
+  const [fetching, setFetching] = useState(false);
 
-const searchQuery = async () => {
-  const MyOctokit = Octokit.plugin(paginateGraphql);
-  const octokit = new MyOctokit({ auth: SECRET_KEY });
+  // Отправка запроса
+  // Использовал плагин для пагинации
+  const searchQuery = async () => {
+    const MyOctokit = Octokit.plugin(paginateGraphql);
+    const octokit = new MyOctokit({ auth: SECRET_KEY });
 
-  await octokit.graphql.paginate(
-    `query paginate($cursor: String) {
-      search(type: REPOSITORY, query: """${searchInput} in:name""", first: 10, after: $cursor) {
-        repos: edges {
-          repo: node {
-            ... on Repository {
-              id
-              url
-              name
-              description
+    await octokit.graphql.paginate(
+      `query paginate($cursor: String) {
+        search(type: REPOSITORY, query: """${searchInput} in:name""", first: 10, after: $cursor) {
+          repos: edges {
+            repo: node {
+              ... on Repository {
+                id
+                url
+                name
+                description
+              }
             }
           }
+          pageInfo {
+            endCursor
+          }
         }
-        pageInfo {
-          endCursor
-        }
+      }`,
+      {
+        cursor: cursor
       }
-    }`,
-    {
-      cursor: cursor
-    }
-  )
-    .then(res => {
-      setCursor(res.search.pageInfo.endCursor);
-      setRepData([...repData, ...res.search.repos]);
-    })
-    .finally(() => setFetching(false))
-    .catch(err => console.log(err))
-}
+    )
+      .then(res => {
+        setCursor(res.search.pageInfo.endCursor);
+        setRepData([...repData, ...res.search.repos]);
+      })
+      .finally(() => setFetching(false))
+      .catch(err => console.log(err))
+  }
 
-  // Чтобы запросы разных имен не наслаивались друг к другу
-  // Довольно грубо, но как временное решение
-  useEffect(() => {
-    setRepData([]);
-  }, [searchInput])
+  // Такое лучше было бы сделать через intersection observer наверное, но для примера достаточно
+  const scrollHandler = (e) => {
+    if(e.target.documentElement.scrollHeight - (e.target.documentElement.scrollTop + window.innerHeight) < 100) {
+      setFetching(true);
+    }
+  }
 
   useEffect(() => {
     document.addEventListener('scroll', scrollHandler)
-
+    
     return () => {
       document.removeEventListener('scroll', scrollHandler)
     }
   }, []);
-
+  
   useEffect(() => {
     if(fetching) {
       searchQuery();
     }
   }, [fetching]);
 
-  const scrollHandler = (e) => {
-    if(e.target.documentElement.scrollHeight - (e.target.documentElement.scrollTop + window.innerHeight) < 100) {
-      setFetching(true);
-    }
-  }
+  // Чтобы результаты разных запросов не отрисовывались друг под другом
+  // Довольно грубо, но как временное решение
+  useEffect(() => {
+    setRepData([]);
+  }, [searchInput])
 
   return (
     <div className="app">

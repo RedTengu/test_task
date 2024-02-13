@@ -1,1 +1,2 @@
-export const SECRET_KEY = "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";
+// Вообще ключи так не хранят, но он все равно временный.
+export const SECRET_KEY = "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";
